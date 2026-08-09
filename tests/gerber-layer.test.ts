@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import type { AnyCircuitElement } from "circuit-json";
 import { createGerberGroupMask } from "../lib/gerber-mask";
 import { getGerberLayerName } from "../lib/gerber-layer";
+import { encodeRgbaPng } from "../lib/png";
+import { writeOrCompareBinarySnapshot } from "./fixtures/bitmap-snapshot";
 
 test("maps all ten copper layers to Gerber layer names", () => {
   expect(getGerberLayerName("top")).toBe("F_Cu");
@@ -54,4 +56,15 @@ test("renders orthogonally rotated rounded SMT pads with the correct dimensions"
   expect(renderedWidth).toBeCloseTo(60, -1);
   expect(renderedHeight).toBeCloseTo(100, -1);
   expect(renderedHeight).toBeGreaterThan(renderedWidth);
+
+  const rgba = new Uint8Array(width * height * 4);
+  for (let pixelIndex = 0; pixelIndex < mask.length; pixelIndex++) {
+    const color = mask[pixelIndex] ? [239, 179, 46, 255] : [17, 17, 17, 255];
+    rgba.set(color, pixelIndex * 4);
+  }
+  await writeOrCompareBinarySnapshot(
+    import.meta.path,
+    "orthogonal-rounded-smtpad",
+    encodeRgbaPng({ width, height, rgba }),
+  );
 });
